@@ -2,15 +2,40 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import csv
+import os
 
-def get_links(base_url):
+
+def get_categories(base_url):
+    """
+    Récupère toutes les catégories de livres disponibles sur le site.
+    Renvoie un dictionnaire avec le nom de la catégorie comme clé et l'URL de la catégorie comme valeur.
+    """
+    response = requests.get(base_url)
+    if response.status_code != 200:
+        return {}
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    category_section = soup.find("ul", class_="nav nav-list")
+    categories = {}
+    if category_section:
+        category_links = category_section.find_all("a")
+        for link in category_links:
+            category_name = link.get_text(strip=True)
+            category_href = link.get("href")
+            if category_href and category_name != 'Books':
+                category_url = urljoin(base_url, category_href)
+                categories[category_name] = category_url
+    return categories
+
+
+def get_links(category_url):
     """
     Récupère tous les liens des livres de toutes les pages de la catégorie donnée.
     """
     articles_links = []
 
     while True:
-        response = requests.get(base_url)
+        response = requests.get(category_url)
         if response.status_code != 200:
             break  # Arrête si la page ne peut pas être récupérée
 
@@ -22,21 +47,45 @@ def get_links(base_url):
             a_tag = article.find("a")
             if a_tag and 'href' in a_tag.attrs:
                 relative_href = a_tag['href']
-                absolute_href = urljoin(base_url, relative_href)
+                absolute_href = urljoin(category_url, relative_href)
+                # Nettoyer l'URL en supprimant les segments '../' si présents
                 absolute_href = absolute_href.replace('../../../', '')
-                full_url = "http://books.toscrape.com/catalogue/" + \
-                    absolute_href.split("catalogue/")[-1]
+                full_url = urljoin(
+                    "http://books.toscrape.com/catalogue/", absolute_href)
                 articles_links.append(full_url)
 
         # Vérification de la présence d'une page suivante
         next_button = soup.find("li", class_="next")
         if next_button:
             next_link = next_button.find("a")["href"]
-            base_url = urljoin(base_url, next_link)
+            category_url = urljoin(category_url, next_link)
         else:
             break  # Pas de page suivante, sortie de la boucle
 
     return articles_links
+
+
+def clean_filename(filename):
+    """
+    Remplace les caractères interdits dans un nom de fichier par des underscores.
+    """
+    invalid_chars = '\\/*?:"<>|'
+    for char in invalid_chars:
+        filename = filename.replace(char, '_')
+    return filename
+
+
+def extract_number(text):
+    """
+    Extrait le premier nombre trouvé dans une chaîne de caractères.
+    """
+    number = ''
+    for char in text:
+        if char.isdigit():
+            number += char
+        elif number:
+            break  # Arrête la boucle une fois le nombre terminé
+    return number if number else '0'
 
 
 def get_book_details(link):
@@ -65,9 +114,8 @@ def get_book_details(link):
     upc = product_info.get("UPC", "")
     price_including_tax = product_info.get("Price (incl. tax)", "")
     price_excluding_tax = product_info.get("Price (excl. tax)", "")
-    number_available = product_info.get("Availability", "").strip()
-    # Extraire le nombre disponible à partir de la chaîne
-    number_available = ''.join(filter(str.isdigit, number_available))
+    availability = product_info.get("Availability", "").strip()
+    number_available = extract_number(availability)
 
     # Description du produit
     description = ""
@@ -102,7 +150,7 @@ def get_book_details(link):
         relative_image_url = img_tag['src']
         image_url = urljoin(link, relative_image_url)
 
-    # Créer un dictionnaire avec les informations
+    # Créer un dictionnaire avec les informations requises
     book = {
         "product_page_url": link,
         "universal_product_code (upc)": upc,
@@ -119,46 +167,91 @@ def get_book_details(link):
     return book
 
 
-def get_details(articles_links):
+def save_to_csv(books_data, category_name):
     """
-    Récupère les détails de chaque livre à partir de la liste des liens.
-    """
-    books_data = []
-
-    for link in articles_links:
-        book_details = get_book_details(link)
-        if book_details:
-            books_data.append(book_details)
-
-    return books_data
-
-
-def save_to_csv(books_data, filename="books_data.csv"):
-    """
-    Sauvegarde les données des livres dans un fichier CSV.
+    Sauvegarde les données des livres dans un fichier CSV spécifique à la catégorie avec les champs spécifiés.
     """
     if not books_data:
         return
 
-    headers = books_data[0].keys()
+    # Spécifier les champs dans l'ordre souhaité
+    headers = [
+        "product_page_url",
+        "universal_product_code (upc)",
+        "title",
+        "price_including_tax",
+        "price_excluding_tax",
+        "number_available",
+        "product_description",
+        "category",
+        "review_rating",
+        "image_url"
+    ]
 
-    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+    # Créer le dossier 'csv_files' s'il n'existe pas
+    if not os.path.exists('csv_files'):
+        os.makedirs('csv_files')
+
+    # Nettoyer le nom de la catégorie pour l'utiliser comme nom de fichier
+    filename = clean_filename(category_name) + ".csv"
+    file_path = os.path.join('csv_files', filename)
+
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
-        writer.writerows(books_data)
+        for book in books_data:
+            # Écrire seulement les champs spécifiés
+            row = {field: book.get(field, '') for field in headers}
+            writer.writerow(row)
+
+
+def download_image(image_url, category, image_name):
+    """
+    Télécharge l'image depuis l'URL donnée et l'enregistre dans un dossier spécifique à la catégorie.
+    """
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        # Créer le dossier pour la catégorie s'il n'existe pas
+        category_folder = os.path.join('images', category)
+        if not os.path.exists(category_folder):
+            os.makedirs(category_folder)
+
+        # Déterminer le chemin complet du fichier image
+        image_path = os.path.join(category_folder, image_name)
+
+        # Écrire le contenu de l'image dans le fichier
+        with open(image_path, 'wb') as file:
+            file.write(response.content)
+
+
+def main():
+    # URL de la page d'accueil
+    base_url = "http://books.toscrape.com/"
+
+    # Récupération de toutes les catégories
+    categories = get_categories(base_url)
+
+    # Pour chaque catégorie, récupérer les liens des livres et les détails
+    for category_name, category_url in categories.items():
+        print(f"Traitement de la catégorie : {category_name}")
+        articles_links = get_links(category_url)
+        books_data = []
+
+        for link in articles_links:
+            book_details = get_book_details(link)
+            if book_details:
+                books_data.append(book_details)
+                # Télécharger l'image du livre
+                image_url = book_details.get("image_url", "")
+                if image_url:
+                    # Nommer l'image avec le titre du livre en remplaçant les caractères spéciaux
+                    image_name = clean_filename(book_details["title"]) + ".jpg"
+                    download_image(image_url, category_name, image_name)
+
+        # Sauvegarder les données dans un fichier CSV nommé après la catégorie
+        save_to_csv(books_data, category_name)
+        print(f"Catégorie {category_name} traitée avec succès.\n")
 
 
 if __name__ == "__main__":
-    # URL de la page à scraper
-    base_url = "http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
-
-    # Récupération des liens des livres avec pagination
-    articles_links = get_links(base_url)
-    print(f"Nombre total de liens récupérés : {len(articles_links)}")
-
-    # Récupération des détails des livres
-    books_data = get_details(articles_links)
-
-    # Sauvegarde des données dans un fichier CSV
-    save_to_csv(books_data)
-    print("Données sauvegardées dans books_data.csv")
+    main()

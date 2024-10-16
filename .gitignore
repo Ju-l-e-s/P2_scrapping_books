@@ -24,3 +24,12 @@ dmypy.json
 
 # CSV files
 *.csv
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.svg
