@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import csv
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_categories(base_url):
@@ -224,6 +225,50 @@ def download_image(image_url, category, image_name):
             file.write(response.content)
 
 
+def download_images(books_data):
+    """
+    Télécharge les images des livres en parallèle.
+    """
+    with ThreadPoolExecutor(max_workers=200) as executor:
+        future_to_book = {
+            executor.submit(
+                download_image,
+                book["image_url"],
+                book["category"],
+                clean_filename(book["title"]) + ".jpg"
+            ): book for book in books_data if book.get("image_url", "")
+        }
+
+        for future in as_completed(future_to_book):
+            book = future_to_book[future]
+            try:
+                future.result()
+            except Exception as exc:
+                print(
+                    f'Erreur lors du téléchargement de l\'image pour {book["title"]}: {exc}')
+
+
+def get_details(articles_links):
+    """
+    Récupère les détails des livres en parallèle.
+    """
+    books_data = []
+
+    with ThreadPoolExecutor(max_workers=200) as executor:
+        future_to_url = {executor.submit(
+            get_book_details, link): link for link in articles_links}
+
+        for future in as_completed(future_to_url):
+            link = future_to_url[future]
+            try:
+                book_details = future.result()
+                if book_details:
+                    books_data.append(book_details)
+            except Exception as exc:
+                print(f'Erreur lors du traitement de {link}: {exc}')
+    return books_data
+
+
 def main():
     # URL de la page d'accueil
     base_url = "http://books.toscrape.com/"
@@ -235,21 +280,16 @@ def main():
     for category_name, category_url in categories.items():
         print(f"Traitement de la catégorie : {category_name}")
         articles_links = get_links(category_url)
-        books_data = []
 
-        for link in articles_links:
-            book_details = get_book_details(link)
-            if book_details:
-                books_data.append(book_details)
-                # Télécharger l'image du livre
-                image_url = book_details.get("image_url", "")
-                if image_url:
-                    # Nommer l'image avec le titre du livre en remplaçant les caractères spéciaux
-                    image_name = clean_filename(book_details["title"]) + ".jpg"
-                    download_image(image_url, category_name, image_name)
+        # Récupérer les détails des livres en parallèle
+        books_data = get_details(articles_links)
 
         # Sauvegarder les données dans un fichier CSV nommé après la catégorie
         save_to_csv(books_data, category_name)
+
+        # Télécharger les images en parallèle
+        download_images(books_data)
+
         print(f"Catégorie {category_name} traitée avec succès.\n")
 
 
