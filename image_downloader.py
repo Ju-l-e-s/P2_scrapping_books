@@ -4,18 +4,24 @@ from utils import clean_filename
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def download_image(image_url, category, image_name):
+def download_image(image_url: str, category_name: str, image_name: str) -> None:
     """
-    Télécharge l'image depuis l'URL donnée et l'enregistre dans un dossier spécifique à la catégorie.
+    Télécharge l'image depuis l'URL donnée et l'enregistre dans le dossier 'photos/' de la catégorie.
+
+    Args:
+        image_url (str): L'URL de l'image à télécharger.
+        category_name (str): Le nom de la catégorie dans laquelle enregistrer l'image.
+        image_name (str): Le nom du fichier image à enregistrer.
     """
     response = requests.get(image_url)
     if response.status_code == 200:
-        # Créer le dossier pour la catégorie s'il n'existe pas
-        category_folder = os.path.join('images', category)
-        if not os.path.exists(category_folder):
-            os.makedirs(category_folder)
+        # Chemin du dossier 'photos/' dans le dossier de la catégorie
+        photos_folder = os.path.join(
+            'categories', clean_filename(category_name), 'photos')
+        if not os.path.exists(photos_folder):
+            os.makedirs(photos_folder)
         # Déterminer le chemin complet du fichier image
-        image_path = os.path.join(category_folder, image_name)
+        image_path = os.path.join(photos_folder, image_name)
         # Écrire le contenu de l'image dans le fichier
         with open(image_path, 'wb') as file:
             file.write(response.content)
@@ -23,7 +29,7 @@ def download_image(image_url, category, image_name):
 
 def download_images(books_data, max_workers):
     """
-    Télécharge les images des livres en parallèle.
+    Télécharge les images des livres en parallèle et les enregistre dans le dossier 'photos/' de la catégorie correspondante.
     """
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_book = {

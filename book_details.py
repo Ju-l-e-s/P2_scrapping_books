@@ -1,3 +1,4 @@
+from typing import List
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -5,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import extract_number
 
 
-def get_book_details(link):
+def get_book_details(link:str):
     """
     Récupère les détails d'un livre à partir de son lien et renvoie un dictionnaire contenant les informations.
     """
@@ -84,9 +85,16 @@ def get_book_details(link):
     return book
 
 
-def get_details(articles_links, max_workers):
+def get_details(articles_links: List[str], max_workers: int) -> List[dict]:
     """
-    Récupère les détails des livres en parallèle.
+    Récupère les détails des livres en parallèle
+
+    Args:
+        articles_links (List[str]): Liste des liens des articles à traiter.
+        max_workers (int): Nombre maximum de threads à utiliser pour le traitement en parallèle.
+
+    Returns:
+        List[dict]: Liste des dictionnaires contenant les détails des livres.
     """
     books_data = []
 

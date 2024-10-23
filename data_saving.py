@@ -3,9 +3,16 @@ import os
 from utils import clean_filename
 
 
-def save_to_csv(books_data, category_name):
+def save_to_csv(books_data: list[dict], category_name: str) -> None:
     """
-    Sauvegarde les données des livres dans un fichier CSV spécifique à la catégorie avec les champs spécifiés.
+        Args:
+            books_data (list[dict]): Liste de dictionnaires contenant les données des livres.
+            category_name (str): Nom de la catégorie pour laquelle les données doivent être sauvegardées.
+
+        Returns:
+            None
+
+    Sauvegarde les données des livres dans un fichier CSV spécifique à la catégorie dans le dossier de la catégorie.
     """
     if not books_data:
         return
@@ -24,16 +31,17 @@ def save_to_csv(books_data, category_name):
         "image_url"
     ]
 
-    # Créer le dossier 'csv_files' s'il n'existe pas
-    if not os.path.exists('csv_files'):
-        os.makedirs('csv_files')
+    # Créer le dossier 'categories/<nom_catégorie>' s'il n'existe pas
+    category_folder = os.path.join('categories', clean_filename(category_name))
+    if not os.path.exists(category_folder):
+        os.makedirs(category_folder)
 
-    # Nettoyer le nom de la catégorie pour l'utiliser comme nom de fichier
-    filename = clean_filename(category_name) + ".csv"
-    file_path = os.path.join('csv_files', filename)
+    # Nom du fichier CSV
+    filename = 'data.csv'
+    file_path = os.path.join(category_folder, filename)
 
     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, fieldnames=headers)
+        writer = csv.DictWriter(file, fieldnames=headers, delimiter=';')
         writer.writeheader()
         for book in books_data:
             # Écrire seulement les champs spécifiés

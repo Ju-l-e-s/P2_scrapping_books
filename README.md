@@ -50,11 +50,11 @@ python script.py
 ```
 
 ## Structure du projet
-
+```
 ├── env/ # Environnement virtuel (exclu du repository)
 ├── images/ # Dossier où les images sont téléchargées
 ├── csv_files/ # Dossier où les csv sont enregistrés
 ├── requirements.txt # Liste des dépendances du projet
 ├── script.py # Script Python principal
-├── README.md # Ce fichier
 └── .gitignore # Fichier pour exclure certains fichiers du contrôle de version
+```
