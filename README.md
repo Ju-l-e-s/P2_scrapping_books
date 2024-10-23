@@ -2,7 +2,7 @@
 
 ## Description
 
-Ce projet est un **scraper** qui permet de surveiller les prix des livres d'occasion sur le site _Books to Scrape_. Le script extrait des informations sur les livres, telles que le titre, le prix, la disponibilité, la description, et télécharge également les images associées. Les données sont sauvegardées dans des fichiers CSV et les images sont stockées localement.
+Ce projet est un **scraper** qui permet de surveiller les prix des livres d'occasion sur le site [_Books to Scrape_](http://books.toscrape.com/). Le script extrait des informations sur les livres, telles que le titre, le prix, la disponibilité, la description, et télécharge également les images associées. Les données sont sauvegardées dans des fichiers CSV et les images sont stockées localement.
 
 Le projet est divisé en plusieurs phases :
 
@@ -37,8 +37,8 @@ Assurez-vous d'avoir Python 3 installé sur votre machine. Vous pouvez télécha
 Clonez le repository GitHub sur votre machine locale :
 
 ```bash
-git clone https://github.com/votre_nom_utilisateur/nom_du_projet.git
-cd nom_du_projet
+git clone https://github.com/Ju-l-e-s/P2_scrapping_books.git
+cd P2_scrapping_books
 ```
 
 ## Utilisation
@@ -50,11 +50,34 @@ python script.py
 ```
 
 ## Structure du projet
+
 ```
-├── env/ # Environnement virtuel (exclu du repository)
-├── images/ # Dossier où les images sont téléchargées
-├── csv_files/ # Dossier où les csv sont enregistrés
-├── requirements.txt # Liste des dépendances du projet
-├── script.py # Script Python principal
-└── .gitignore # Fichier pour exclure certains fichiers du contrôle de version
+├── categories/             # Dossier principal contenant toutes les catégories
+│   ├── Catégorie1/         # Dossier de la première catégorie
+│   │   ├── data.csv        # Données des livres de la catégorie au format CSV
+│   │   └── photos/         # Dossier contenant les images des livres
+│   │       ├── livre1.jpg
+│   │       ├── livre2.jpg
+│   │       └── ...
+│   ├── Catégorie2/
+│   │   ├── data.csv
+│   │   └── photos/
+│   │       ├── livre1.jpg
+│   │       ├── livre2.jpg
+│   │       └── ...
+│   └── ...                 # Autres catégories
+├── requirements.txt        # Liste des dépendances du projet
+├── main.py                 # Script Python principal
+├── categories.py           # Module pour gérer les catégories
+├── book_details.py         # Module pour extraire les détails des livres
+├── data_saving.py          # Module pour sauvegarder les données
+├── image_downloader.py     # Module pour télécharger les images
+├── utils.py                # Fonctions utilitaires
+└── .gitignore              # Fichier pour exclure certains fichiers du contrôle de version
 ```
+
+## Notes
+
+- **Organisation des données** : Les données et les images sont structurées par catégorie pour faciliter la navigation et l’analyse.
+- **Connexion Internet** : Assurez-vous d’avoir une connexion Internet stable lors de l’exécution du script, car il effectue de nombreuses requêtes réseau.
+- **Site cible** : [_Books to Scrape_](http://books.toscrape.com/) est un site de démonstration conçu spécifiquement pour le web scraping.
