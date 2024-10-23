@@ -41,6 +41,14 @@ git clone https://github.com/Ju-l-e-s/P2_scrapping_books.git
 cd P2_scrapping_books
 ```
 
+### 2. Installer les dépendances
+
+Installez les packages requis à partir du fichier requirements.txt :
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Utilisation
 
 ### Extraire les données
