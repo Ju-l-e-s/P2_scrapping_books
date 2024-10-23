@@ -1,18 +1,16 @@
 import csv
 import os
+from typing import List, Dict
 from utils import clean_filename
 
 
-def save_to_csv(books_data: list[dict], category_name: str) -> None:
+def save_to_csv(books_data: List[Dict[str, str]], category_name: str) -> None:
     """
-        Args:
-            books_data (list[dict]): Liste de dictionnaires contenant les données des livres.
-            category_name (str): Nom de la catégorie pour laquelle les données doivent être sauvegardées.
-
-        Returns:
-            None
-
     Sauvegarde les données des livres dans un fichier CSV spécifique à la catégorie dans le dossier de la catégorie.
+
+    Args:
+        books_data (List[Dict[str, str]]): Une liste de dictionnaires contenant les données des livres.
+        category_name (str): Le nom de la catégorie pour laquelle les données doivent être sauvegardées.
     """
     if not books_data:
         return
@@ -31,18 +29,19 @@ def save_to_csv(books_data: list[dict], category_name: str) -> None:
         "image_url"
     ]
 
-    # Créer le dossier 'categories/<nom_catégorie>' s'il n'existe pas
-    category_folder = os.path.join('categories', clean_filename(category_name))
-    if not os.path.exists(category_folder):
-        os.makedirs(category_folder)
+    # Créer le répertoire pour la catégorie s'il n'existe pas
+    category_dir = os.path.join('categories', clean_filename(category_name))
+    os.makedirs(category_dir, exist_ok=True)
 
-    # Nom du fichier CSV
-    filename = 'data.csv'
-    file_path = os.path.join(category_folder, filename)
+    # Chemin du fichier CSV
+    csv_file_path = os.path.join(
+        category_dir, f"{clean_filename(category_name)}.csv")
 
-    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, fieldnames=headers, delimiter=';')
+    # Écrire les données dans le fichier CSV
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
         writer.writeheader()
+
         for book in books_data:
             # Écrire seulement les champs spécifiés
             row = {field: book.get(field, '') for field in headers}

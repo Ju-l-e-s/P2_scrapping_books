@@ -66,14 +66,14 @@ python script.py
 │   │       ├── livre2.jpg
 │   │       └── ...
 │   └── ...                 # Autres catégories
-├── requirements.txt        # Liste des dépendances du projet
 ├── main.py                 # Script Python principal
 ├── categories.py           # Module pour gérer les catégories
 ├── book_details.py         # Module pour extraire les détails des livres
 ├── data_saving.py          # Module pour sauvegarder les données
 ├── image_downloader.py     # Module pour télécharger les images
 ├── utils.py                # Fonctions utilitaires
-└── .gitignore              # Fichier pour exclure certains fichiers du contrôle de version
+├── requirements.txt        # Liste des dépendances du projet
+└── README.md               # Fichier README avec les informations du projet
 ```
 
 ## Notes

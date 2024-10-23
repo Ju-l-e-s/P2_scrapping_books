@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from typing import Dict
 
 
 def get_categories(base_url: str) -> dict:
